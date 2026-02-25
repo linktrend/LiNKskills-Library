@@ -1,0 +1,28 @@
+{
+  "name": "stripe",
+  "description": "Stripe billing API wrapper for invoice listing with vault-managed authentication.",
+  "capability_summary": "Provides Stripe invoice retrieval for venture operations while keeping API keys in vault.",
+  "parameters": [
+    {
+      "name": "limit",
+      "type": "integer",
+      "description": "Maximum number of invoices to return."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "description": "Optional Stripe invoice status filter (for example open, paid, draft)."
+    }
+  ],
+  "commands": [
+    {
+      "name": "list-invoices",
+      "description": "List invoices from Stripe Billing."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "invoice query result payload",
+    "path": "stripe"
+  }
+}

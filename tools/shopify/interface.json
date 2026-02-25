@@ -1,0 +1,23 @@
+{
+  "name": "shopify",
+  "description": "Shopify Admin API wrapper for product listing with vault-managed authentication.",
+  "capability_summary": "Provides Shopify product listing for venture commerce operations while keeping credentials in vault.",
+  "parameters": [
+    {
+      "name": "limit",
+      "type": "integer",
+      "description": "Maximum number of products to return."
+    }
+  ],
+  "commands": [
+    {
+      "name": "list-products",
+      "description": "List products from Shopify Admin API."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "product query result payload",
+    "path": "shopify"
+  }
+}

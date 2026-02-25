@@ -1,0 +1,34 @@
+{
+  "definitions": {
+    "input": {
+      "type": "object",
+      "required": ["brief", "campaign_goal"],
+      "properties": {
+        "brief": { "type": "string", "minLength": 10 },
+        "campaign_goal": { "type": "string", "minLength": 3 },
+        "workflow_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "asset_orders", "trigger_manifest"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "asset_orders": { "type": "array", "items": { "type": "object" } },
+        "trigger_manifest": { "type": "object" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["task_id", "workflow_step", "status", "variables", "last_updated"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^\\d{8}-\\d{4}-[A-Z0-9]+-\\d{6}$" },
+        "workflow_step": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "status": { "type": "string", "enum": ["INITIALIZED", "IN_PROGRESS", "PENDING_APPROVAL", "COMPLETED", "FAILED"] },
+        "variables": { "type": "object" },
+        "last_updated": { "type": "string" },
+        "seek_index": { "type": "object" }
+      }
+    }
+  }
+}

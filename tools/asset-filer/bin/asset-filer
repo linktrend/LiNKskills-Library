@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict
+
+VERSION = "1.0.0"
+
+
+def emit(payload: Dict[str, Any], code: int = 0) -> int:
+    print(json.dumps(payload, indent=2))
+    return code
+
+
+def run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Asset upload bridge via gw")
+    parser.add_argument("command", nargs="?", default="upload", choices=["upload"])
+    parser.add_argument("file", nargs="?")
+    parser.add_argument("--asset-type", default="other")
+    parser.add_argument("--project-id", default="default")
+    parser.add_argument("--json", action="store_true")
+    parser.add_argument("--version", action="store_true")
+    args = parser.parse_args()
+
+    if args.version:
+        return emit({"status": "success", "output": VERSION})
+
+    if not args.file:
+        return emit({"status": "error", "output": "file argument is required"}, 1)
+
+    file_path = Path(args.file)
+    if not file_path.exists() or not file_path.is_file():
+        return emit({"status": "error", "output": f"file not found: {args.file}"}, 1)
+
+    gw_bin = shutil.which("gw")
+    if not gw_bin:
+        return emit({"status": "error", "output": "gw executable not found in PATH"}, 1)
+
+    # Primary upload command required by protocol.
+    upload_cmd = [gw_bin, "asset", "upload", str(file_path), "--json"]
+    upload_res = run_cmd(upload_cmd)
+    if upload_res.returncode != 0:
+        return emit(
+            {
+                "status": "error",
+                "output": "asset upload failed",
+                "stderr": upload_res.stderr.strip(),
+                "path": "gw asset upload"
+            },
+            1,
+        )
+
+    try:
+        upload_payload = json.loads(upload_res.stdout)
+    except json.JSONDecodeError:
+        upload_payload = {"raw": upload_res.stdout.strip()}
+
+    metadata = {
+        "filename": file_path.name,
+        "asset_type": args.asset_type,
+        "project_id": args.project_id,
+        "filesize_bytes": os.path.getsize(file_path),
+        "storage_path": upload_payload.get("path", "unknown"),
+    }
+
+    # Secondary metadata registration bridge; expected to map to lsl_memory.assets in gw backend.
+    register_cmd = [
+        gw_bin,
+        "asset",
+        "register",
+        "--metadata",
+        json.dumps(metadata),
+        "--json",
+    ]
+    register_res = run_cmd(register_cmd)
+    registration = {
+        "status": "unknown",
+        "note": "Registration command executed",
+    }
+    if register_res.returncode == 0:
+        try:
+            registration = json.loads(register_res.stdout)
+        except json.JSONDecodeError:
+            registration = {"status": "success", "raw": register_res.stdout.strip()}
+    else:
+        registration = {
+            "status": "warning",
+            "note": "Upload succeeded but metadata registration failed",
+            "stderr": register_res.stderr.strip()
+        }
+
+    return emit(
+        {
+            "status": "success",
+            "output": "Asset upload completed",
+            "path": upload_payload.get("path", "unknown"),
+            "metadata": metadata,
+            "registration": registration,
+            "table": "lsl_memory.assets"
+        }
+    )
+
+
+if __name__ == "__main__":
+    sys.exit(main())

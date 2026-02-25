@@ -1,0 +1,60 @@
+{
+  "name": "memory",
+  "description": "Supabase memory storage with scoped recall plus Markdown notes in lsl_memory.notes.",
+  "capability_summary": "Stores/retrieves scoped memories and Markdown notes in Supabase with agent isolation and vault-backed credentials.",
+  "parameters": [
+    {
+      "name": "agent_id",
+      "type": "string",
+      "description": "Logical agent namespace (for example lisa, bob) used to isolate memory records."
+    },
+    {
+      "name": "project_id",
+      "type": "string",
+      "description": "Project workspace identifier for memory partitioning."
+    },
+    {
+      "name": "content",
+      "type": "string",
+      "description": "Memory content to persist in remember mode."
+    },
+    {
+      "name": "query",
+      "type": "string",
+      "description": "Optional search text used by recall mode."
+    },
+    {
+      "name": "title",
+      "type": "string",
+      "description": "Note title used by add-note/get-note."
+    },
+    {
+      "name": "md_content",
+      "type": "string",
+      "description": "Markdown note content for add-note."
+    }
+  ],
+  "commands": [
+    {
+      "name": "remember",
+      "description": "Store one memory item for a scoped agent/project pair."
+    },
+    {
+      "name": "recall",
+      "description": "Retrieve memory items for a scoped agent/project pair."
+    },
+    {
+      "name": "add-note",
+      "description": "Store a Markdown note in lsl_memory.notes."
+    },
+    {
+      "name": "get-note",
+      "description": "Retrieve Markdown notes by agent with optional id/title filtering."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "memory result payload",
+    "path": "supabase table name"
+  }
+}

@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import shlex
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict, List
+
+VERSION = "1.0.0"
+
+
+def emit(payload: Dict[str, Any], code: int = 0) -> int:
+    print(json.dumps(payload, indent=2))
+    return code
+
+
+def load_records_from_file(path: str) -> List[Dict[str, Any]]:
+    file_path = Path(path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"input file not found: {path}")
+    data = json.loads(file_path.read_text(encoding="utf-8"))
+    if isinstance(data, dict) and isinstance(data.get("records"), list):
+        return [r for r in data["records"] if isinstance(r, dict)]
+    if isinstance(data, list):
+        return [r for r in data if isinstance(r, dict)]
+    raise ValueError("input JSON must be a list of records or {'records': [...]} object")
+
+
+def load_records_from_bridge(command: str) -> List[Dict[str, Any]]:
+    result = subprocess.run(shlex.split(command), capture_output=True, text=True, check=False)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or "bridge command failed")
+    payload = json.loads(result.stdout)
+    if isinstance(payload, dict):
+        for key in ("records", "campaigns", "items"):
+            if isinstance(payload.get(key), list):
+                return [r for r in payload[key] if isinstance(r, dict)]
+    if isinstance(payload, list):
+        return [r for r in payload if isinstance(r, dict)]
+    raise ValueError("bridge output did not include a valid record list")
+
+
+def as_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except Exception:
+        return default
+
+
+def detect_anomalies(records: List[Dict[str, Any]], spend_threshold_pct: float, ctr_threshold_pct: float) -> List[Dict[str, Any]]:
+    anomalies: List[Dict[str, Any]] = []
+    for row in records:
+        current_spend = as_float(row.get("spend"))
+        baseline_spend = as_float(row.get("baseline_spend"), current_spend)
+        current_ctr = as_float(row.get("ctr"))
+        baseline_ctr = as_float(row.get("baseline_ctr"), current_ctr)
+
+        spend_pct = 0.0
+        ctr_drop_pct = 0.0
+        if baseline_spend > 0:
+            spend_pct = ((current_spend - baseline_spend) / baseline_spend) * 100
+        if baseline_ctr > 0:
+            ctr_drop_pct = ((baseline_ctr - current_ctr) / baseline_ctr) * 100
+
+        if spend_pct >= spend_threshold_pct or ctr_drop_pct >= ctr_threshold_pct:
+            anomalies.append(
+                {
+                    "campaign": row.get("campaign", "unknown"),
+                    "channel": row.get("channel", "unknown"),
+                    "spend": current_spend,
+                    "ctr": current_ctr,
+                    "spend_increase_pct": round(spend_pct, 2),
+                    "ctr_drop_pct": round(ctr_drop_pct, 2),
+                    "reason": "spend increase" if spend_pct >= spend_threshold_pct else "ctr drop"
+                }
+            )
+    return anomalies
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Ad performance monitor (Spend vs CTR anomalies).")
+    parser.add_argument("command", nargs="?", default="monitor", choices=["monitor"], help="Command to execute")
+    parser.add_argument("--input", help="Local JSON file with campaign records")
+    parser.add_argument("--bridge-command", help="Optional gw bridge command that returns JSON")
+    parser.add_argument("--spend-threshold-pct", type=float, default=35.0)
+    parser.add_argument("--ctr-threshold-pct", type=float, default=20.0)
+    parser.add_argument("--json", action="store_true", help="Emit JSON output")
+    parser.add_argument("--version", action="store_true", help="Print version")
+    args = parser.parse_args()
+
+    if args.version:
+        return emit({"status": "success", "output": VERSION})
+
+    try:
+        records: List[Dict[str, Any]] = []
+        source = "none"
+        if args.bridge_command:
+            records = load_records_from_bridge(args.bridge_command)
+            source = "gw-bridge"
+        elif args.input:
+            records = load_records_from_file(args.input)
+            source = "file"
+
+        if not records:
+            return emit(
+                {
+                    "status": "error",
+                    "output": "No campaign records available. Provide --input or --bridge-command.",
+                    "anomalies": [],
+                    "source": source
+                },
+                1,
+            )
+
+        anomalies = detect_anomalies(records, args.spend_threshold_pct, args.ctr_threshold_pct)
+        return emit(
+            {
+                "status": "success",
+                "output": "Ad anomaly scan completed",
+                "source": source,
+                "records_analyzed": len(records),
+                "anomalies": anomalies,
+                "recommendation": "Escalate anomalies to marketing-strategist for budget/funnel adjustments"
+            }
+        )
+    except Exception as exc:
+        return emit({"status": "error", "output": str(exc), "anomalies": []}, 1)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

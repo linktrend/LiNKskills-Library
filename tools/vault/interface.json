@@ -1,0 +1,41 @@
+{
+  "name": "vault",
+  "description": "Encrypted key/value credential store for secrets and identity material, protected by LSL_MASTER_KEY.",
+  "capability_summary": "Securely stores and retrieves sensitive values without committing plaintext secrets. Supports set/get/list for runtime credential access.",
+  "parameters": [
+    {
+      "name": "command",
+      "type": "string",
+      "description": "Vault command to execute: set, get, or list."
+    },
+    {
+      "name": "key",
+      "type": "string",
+      "description": "Logical storage key for a secret value."
+    },
+    {
+      "name": "value_source",
+      "type": "string",
+      "description": "Either a file path to read or an inline string value when using set."
+    }
+  ],
+  "commands": [
+    {
+      "name": "set",
+      "description": "Encrypt and store a value from file or inline text."
+    },
+    {
+      "name": "get",
+      "description": "Decrypt and return a value by key."
+    },
+    {
+      "name": "list",
+      "description": "List all keys without exposing values."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "command result payload",
+    "path": "vault data file path"
+  }
+}

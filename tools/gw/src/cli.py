@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+import os
+import subprocess
+import time
 from pathlib import Path
 from typing import Any, Callable
 
@@ -16,6 +20,7 @@ from services.ads import AdsService
 from services.env_context import EnvContextService
 from services.forms import FormsService
 from services.maps_routes import MapsRoutesService
+from services.news import NewsService
 from services.search_console import SearchConsoleService
 from services.sheets import SheetsService
 from services.slides import SlidesService
@@ -25,7 +30,7 @@ from services.youtube import YouTubeService
 from utils.auth import GWAuth
 from utils.logging import GWAuditLogger
 
-VERSION = "v1.4.0"
+VERSION = "v2.1.0"
 ACTIVE_SERVICES = [
     "gmail",
     "drive",
@@ -37,20 +42,65 @@ ACTIVE_SERVICES = [
     "search_console",
     "forms",
     "ads",
+    "news",
     "maps_routes",
     "env_context",
     "tasks",
     "youtube",
     "slides",
     "chat",
+    "vault",
+    "sandbox",
 ]
 
 SCOPE_REFRESH_HINT = "Please delete tools/gw/src/token.json and run 'gw setup' to refresh scopes."
 LOCAL_TOKEN_PATH = Path(__file__).resolve().parent / "token.json"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+VAULT_MODULE_PATH = REPO_ROOT / "tools" / "vault" / "src" / "vault_logic.py"
+SANDBOX_MODULE_PATH = REPO_ROOT / "tools" / "sandbox" / "src" / "docker_runtime.py"
+VAULT_DATA_PATH = REPO_ROOT / "tools" / "vault" / "data" / "vault.bin"
+USAGE_MODULE_PATH = REPO_ROOT / "tools" / "usage" / "src" / "usage_logic.py"
+SECURE_ENV_MESSAGE = (
+    "Secure Environment Required: set LSL_MASTER_KEY before running gw commands."
+)
+COMMAND_START_TS = time.perf_counter()
+
+
+def _log_usage_event(payload: dict[str, Any], exit_code: int) -> None:
+    try:
+        if not USAGE_MODULE_PATH.exists():
+            return
+        module = _load_external_module("lsl_usage_logic", USAGE_MODULE_PATH)
+        tracker_cls = getattr(module, "LangfuseUsageTracker", None)
+        if tracker_cls is None:
+            return
+
+        tracker = tracker_cls(repo_root=REPO_ROOT)
+        success = bool(payload.get("ok", exit_code == 0))
+        latency_ms = int((time.perf_counter() - COMMAND_START_TS) * 1000)
+        tracker.log_execution(
+            service=str(payload.get("service", "core")),
+            action=str(payload.get("action", "unknown")),
+            success=success,
+            latency_ms=latency_ms,
+            metadata={
+                "exit_code": exit_code,
+                "error": payload.get("error"),
+            },
+        )
+    except Exception as exc:
+        logger = GWAuditLogger()
+        logger.log_event(
+            service="usage",
+            action="usage.log",
+            status="error",
+            resource_id=str(exc)[:160],
+        )
 
 
 def emit(payload: dict[str, Any], exit_code: int = 0) -> None:
-    """Write a deterministic JSON response and terminate."""
+    """Write deterministic JSON output and terminate."""
+    _log_usage_event(payload=payload, exit_code=exit_code)
     click.echo(json.dumps(payload, sort_keys=True, separators=(",", ":")))
     raise SystemExit(exit_code)
 
@@ -70,9 +120,111 @@ def _error_message_with_scope_hint(result: dict[str, Any], default_message: str)
     return message
 
 
+def _load_sandbox_runtime_class() -> Any:
+    module = _load_external_module("lsl_sandbox_runtime", SANDBOX_MODULE_PATH)
+    runtime_cls = getattr(module, "DockerRuntime", None)
+    if runtime_cls is None:
+        raise AttributeError("DockerRuntime class not found in docker_runtime.py")
+    return runtime_cls
+
+
+def _require_secure_environment() -> None:
+    if os.getenv("LSL_MASTER_KEY", "").strip():
+        return
+
+    logger = GWAuditLogger()
+    logger.log_event(
+        service="core",
+        action="security.master_key.check",
+        status="error",
+        resource_id="LSL_MASTER_KEY",
+    )
+    click.echo(
+        json.dumps(
+            {
+                "ok": False,
+                "service": "core",
+                "action": "security.master_key.check",
+                "data": {},
+                "error": {
+                    "code": "SECURE_ENV_REQUIRED",
+                    "message": SECURE_ENV_MESSAGE,
+                },
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
+    raise SystemExit(1)
+
+
+class ExecutionService:
+    """Command execution router with sandbox-by-default enforcement."""
+
+    def __init__(self, use_sandbox: bool = True, allow_network: bool = False) -> None:
+        self.use_sandbox = use_sandbox
+        self.allow_network = allow_network
+        self.logger = GWAuditLogger()
+
+    def run(self, command: str) -> dict[str, Any]:
+        if self.use_sandbox:
+            return self._run_in_sandbox(command)
+        return self._run_local(command)
+
+    def _run_in_sandbox(self, command: str) -> dict[str, Any]:
+        def audit_callback(event_action: str, status: str, resource_id: str) -> None:
+            self.logger.log_event(
+                service="sandbox",
+                action=event_action,
+                status=status,
+                resource_id=resource_id,
+            )
+
+        runtime_cls = _load_sandbox_runtime_class()
+        runtime = runtime_cls(
+            image="python:3.11-slim",
+            mem_limit="512m",
+            network_disabled=not self.allow_network,
+            audit_callback=audit_callback,
+        )
+        return runtime.run(command=command, cwd=Path.cwd())
+
+    def _run_local(self, command: str) -> dict[str, Any]:
+        self.logger.log_event(
+            service="sandbox",
+            action="sandbox.bypass.local_exec",
+            status="start",
+            resource_id=command,
+        )
+        completed = subprocess.run(
+            ["/bin/sh", "-lc", command],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        status = "success" if completed.returncode == 0 else "error"
+        self.logger.log_event(
+            service="sandbox",
+            action="sandbox.bypass.local_exec",
+            status=status,
+            resource_id=command,
+        )
+        return {
+            "status": status,
+            "command": command,
+            "image": "host",
+            "network_disabled": False,
+            "cwd": str(Path.cwd()),
+            "stdout": completed.stdout,
+            "stderr": completed.stderr,
+            "exit_code": completed.returncode,
+        }
+
+
 def _version_callback(ctx: click.Context, _param: click.Option, value: bool) -> None:
     if not value or ctx.resilient_parsing:
         return
+    _require_secure_environment()
     emit(
         {
             "ok": True,
@@ -95,17 +247,28 @@ def _version_callback(ctx: click.Context, _param: click.Option, value: bool) -> 
     expose_value=False,
     callback=_version_callback,
 )
+@click.option(
+    "--no-sandbox",
+    is_flag=True,
+    default=False,
+    help="Bypass default container sandbox for command execution (human override only).",
+)
 @click.pass_context
-def gw(ctx: click.Context) -> None:
+def gw(ctx: click.Context, no_sandbox: bool) -> None:
     """Gateway root group."""
+    _require_secure_environment()
     ctx.ensure_object(dict)
+    ctx.obj["use_sandbox"] = not no_sandbox
     if ctx.invoked_subcommand is None:
         emit(
             {
                 "ok": True,
                 "service": "core",
                 "action": "gw.root",
-                "data": {"group": "gw"},
+                "data": {
+                    "group": "gw",
+                    "use_sandbox": bool(ctx.obj["use_sandbox"]),
+                },
                 "error": None,
             }
         )
@@ -327,6 +490,22 @@ def ads(ctx: click.Context, config_path: Path) -> None:
         )
 
 
+@gw.group(name="news", invoke_without_command=True)
+@click.pass_context
+def news(ctx: click.Context) -> None:
+    """News service group scaffold."""
+    if ctx.invoked_subcommand is None:
+        emit(
+            {
+                "ok": True,
+                "service": "news",
+                "action": "news.root",
+                "data": {"group": "news"},
+                "error": None,
+            }
+        )
+
+
 @gw.group(name="maps", invoke_without_command=True)
 @click.pass_context
 def maps(ctx: click.Context) -> None:
@@ -450,6 +629,38 @@ def chat(ctx: click.Context, config_path: Path) -> None:
                 "service": "chat",
                 "action": "chat.root",
                 "data": {"group": "chat"},
+                "error": None,
+            }
+        )
+
+
+@gw.group(name="vault", invoke_without_command=True)
+@click.pass_context
+def vault(ctx: click.Context) -> None:
+    """Secure vault service group scaffold."""
+    if ctx.invoked_subcommand is None:
+        emit(
+            {
+                "ok": True,
+                "service": "vault",
+                "action": "vault.root",
+                "data": {"group": "vault"},
+                "error": None,
+            }
+        )
+
+
+@gw.group(name="sandbox", invoke_without_command=True)
+@click.pass_context
+def sandbox(ctx: click.Context) -> None:
+    """Sandbox runtime service group scaffold."""
+    if ctx.invoked_subcommand is None:
+        emit(
+            {
+                "ok": True,
+                "service": "sandbox",
+                "action": "sandbox.root",
+                "data": {"group": "sandbox"},
                 "error": None,
             }
         )
@@ -1183,6 +1394,28 @@ def _run_ads_action(
     )
 
 
+def _run_news_action(
+    action: str,
+    resource_id_fallback: str,
+    executor: Callable[[NewsService], dict[str, Any]],
+) -> None:
+    try:
+        service = NewsService()
+        result = executor(service)
+    except Exception as exc:
+        result = {"status": "error", "code": "GNEWS_INIT_FAILED", "message": str(exc)}
+
+    _emit_service_result(
+        service_name="news",
+        action=action,
+        result=result,
+        resource_id_fallback=resource_id_fallback,
+        default_code="GNEWS_UNKNOWN_ERROR",
+        default_message="Unknown News error",
+        resource_keys=["query", "resource_id"],
+    )
+
+
 def _run_maps_action(
     action: str,
     resource_id_fallback: str,
@@ -1224,6 +1457,91 @@ def _run_env_action(
         default_code="GENV_UNKNOWN_ERROR",
         default_message="Unknown Env Context error",
         resource_keys=["timezone", "resource_id"],
+    )
+
+
+def _load_external_module(module_name: str, module_path: Path) -> Any:
+    if not module_path.exists():
+        raise FileNotFoundError(f"Module not found: {module_path}")
+
+    spec = importlib.util.spec_from_file_location(module_name, str(module_path))
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load module spec for {module_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _run_vault_action(
+    action: str,
+    resource_id_fallback: str,
+    executor: Callable[[Any], dict[str, Any]],
+) -> None:
+    logger = GWAuditLogger()
+
+    def audit_callback(event_action: str, status: str, resource_id: str) -> None:
+        logger.log_event(
+            service="vault",
+            action=event_action,
+            status=status,
+            resource_id=resource_id,
+        )
+
+    try:
+        module = _load_external_module("lsl_vault_logic", VAULT_MODULE_PATH)
+        vault_store_cls = getattr(module, "VaultStore", None)
+        if vault_store_cls is None:
+            raise AttributeError("VaultStore class not found in vault_logic.py")
+
+        vault_store = vault_store_cls(
+            data_path=VAULT_DATA_PATH,
+            audit_callback=audit_callback,
+        )
+        result = executor(vault_store)
+    except Exception as exc:
+        result = {"status": "error", "code": "VAULT_INIT_FAILED", "message": str(exc)}
+
+    _emit_service_result(
+        service_name="vault",
+        action=action,
+        result=result,
+        resource_id_fallback=resource_id_fallback,
+        default_code="VAULT_UNKNOWN_ERROR",
+        default_message="Unknown Vault error",
+        resource_keys=["key", "resource_id"],
+    )
+
+
+def _run_sandbox_action(
+    action: str,
+    resource_id_fallback: str,
+    command: str,
+    use_sandbox: bool,
+    allow_network: bool,
+) -> None:
+    try:
+        execution_service = ExecutionService(
+            use_sandbox=use_sandbox,
+            allow_network=allow_network,
+        )
+        result = execution_service.run(command=command)
+    except Exception as exc:
+        result = {
+            "status": "error",
+            "code": "SANDBOX_INIT_FAILED",
+            "message": str(exc),
+            "command": command,
+        }
+
+    _emit_service_result(
+        service_name="sandbox",
+        action=action,
+        result=result,
+        resource_id_fallback=resource_id_fallback,
+        default_code="SANDBOX_UNKNOWN_ERROR",
+        default_message="Unknown Sandbox error",
+        resource_keys=["command", "resource_id"],
     )
 
 
@@ -2431,6 +2749,37 @@ def ads_overview(
     )
 
 
+@news.command(name="search")
+@click.argument("query", type=str)
+@click.option("--limit", default=10, show_default=True, type=click.IntRange(1, 50))
+def news_search(query: str, limit: int) -> None:
+    """Search real-time news through Apify actor integration."""
+
+    def executor(service: NewsService) -> dict[str, Any]:
+        return service.search(query=query, limit=limit)
+
+    _run_news_action(
+        action="news.search",
+        resource_id_fallback=query,
+        executor=executor,
+    )
+
+
+@news.command(name="trending")
+@click.option("--limit", default=10, show_default=True, type=click.IntRange(1, 50))
+def news_trending(limit: int) -> None:
+    """Fetch trending news headlines through Apify actor integration."""
+
+    def executor(service: NewsService) -> dict[str, Any]:
+        return service.trending(limit=limit)
+
+    _run_news_action(
+        action="news.trending",
+        resource_id_fallback="trending",
+        executor=executor,
+    )
+
+
 @maps.command(name="places-search")
 @click.option("--query", required=True, type=str)
 @click.option("--limit", default=5, show_default=True, type=click.IntRange(1, 20))
@@ -2610,12 +2959,93 @@ def chat_get_space(ctx: click.Context, space_name: str) -> None:
     )
 
 
+@vault.command(name="set")
+@click.argument("key", type=str)
+@click.argument("value_source", type=str)
+def vault_set(key: str, value_source: str) -> None:
+    """Encrypt and store a value from a file path or inline string."""
+
+    def executor(vault_store: Any) -> dict[str, Any]:
+        result = vault_store.set_from_file_or_string(key=key, source=value_source)
+        return {
+            "status": "success",
+            "key": key,
+            "source_type": result.get("source_type"),
+            "source_ref": result.get("source_ref"),
+            "vault_path": str(VAULT_DATA_PATH),
+        }
+
+    _run_vault_action(
+        action="vault.set",
+        resource_id_fallback=key,
+        executor=executor,
+    )
+
+
+@vault.command(name="get")
+@click.argument("key", type=str)
+def vault_get(key: str) -> None:
+    """Decrypt and return a vault value by key."""
+
+    def executor(vault_store: Any) -> dict[str, Any]:
+        value = vault_store.get_value(key=key)
+        return {
+            "status": "success",
+            "key": key,
+            "value": value,
+            "vault_path": str(VAULT_DATA_PATH),
+        }
+
+    _run_vault_action(
+        action="vault.get",
+        resource_id_fallback=key,
+        executor=executor,
+    )
+
+
+@vault.command(name="list")
+def vault_list() -> None:
+    """List stored vault keys without exposing values."""
+
+    def executor(vault_store: Any) -> dict[str, Any]:
+        keys = vault_store.list_keys()
+        return {
+            "status": "success",
+            "keys": keys,
+            "count": len(keys),
+            "vault_path": str(VAULT_DATA_PATH),
+        }
+
+    _run_vault_action(
+        action="vault.list",
+        resource_id_fallback="all",
+        executor=executor,
+    )
+
+
+@sandbox.command(name="run")
+@click.argument("command", type=str)
+@click.option("--allow-network", is_flag=True, default=False, show_default=True)
+@click.pass_context
+def sandbox_run(ctx: click.Context, command: str, allow_network: bool) -> None:
+    """Run a shell command in an ephemeral container sandbox."""
+    use_sandbox = bool(ctx.obj.get("use_sandbox", True))
+    _run_sandbox_action(
+        action="sandbox.run",
+        resource_id_fallback=command,
+        command=command,
+        use_sandbox=use_sandbox,
+        allow_network=allow_network,
+    )
+
+
 @gw.command(name="setup")
 @click.option(
     "--config",
     "config_path",
-    required=True,
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=Path("credentials.json"),
+    show_default=True,
+    type=click.Path(dir_okay=False, path_type=Path),
 )
 def setup(config_path: Path) -> None:
     """Initialize OAuth credentials and local token cache."""
@@ -2666,4 +3096,5 @@ def setup(config_path: Path) -> None:
 
 
 if __name__ == "__main__":
+    _require_secure_environment()
     gw()

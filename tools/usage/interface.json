@@ -1,0 +1,38 @@
+{
+  "name": "usage",
+  "description": "Langfuse telemetry logger for gw execution observability with vault-backed credentials and silent local fallback mode.",
+  "capability_summary": "Records every gw execution to Langfuse including latency and success status; when credentials are missing it runs local-only without failing commands.",
+  "parameters": [
+    {
+      "name": "service",
+      "type": "string",
+      "description": "Service namespace for the execution event (for example gmail, drive, news)."
+    },
+    {
+      "name": "action",
+      "type": "string",
+      "description": "Specific command/action name (for example gmail.send, news.search)."
+    },
+    {
+      "name": "latency_ms",
+      "type": "integer",
+      "description": "End-to-end command latency in milliseconds."
+    },
+    {
+      "name": "success",
+      "type": "boolean",
+      "description": "Whether the command completed successfully."
+    }
+  ],
+  "commands": [
+    {
+      "name": "log",
+      "description": "Persist one structured execution event into Langfuse."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "log result or failure message",
+    "path": "langfuse"
+  }
+}

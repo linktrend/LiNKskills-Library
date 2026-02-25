@@ -1,0 +1,54 @@
+{
+  "name": "n8n",
+  "description": "Workflow API wrapper for n8n to read, create, activate, and trigger workflows.",
+  "capability_summary": "Lets agents manage and run n8n workflows via API using vault-managed credentials.",
+  "parameters": [
+    {
+      "name": "workflow_id",
+      "type": "string",
+      "description": "n8n workflow identifier used for read, trigger, activate, and deactivate operations."
+    },
+    {
+      "name": "workflow_json",
+      "type": "string",
+      "description": "JSON object string for creating a workflow definition."
+    },
+    {
+      "name": "payload_json",
+      "type": "string",
+      "description": "JSON object string passed to workflow trigger execution."
+    },
+    {
+      "name": "limit",
+      "type": "integer",
+      "description": "Maximum number of workflows to return in list mode."
+    }
+  ],
+  "commands": [
+    {
+      "name": "read",
+      "description": "Read one workflow by id."
+    },
+    {
+      "name": "list",
+      "description": "List workflows."
+    },
+    {
+      "name": "create",
+      "description": "Create a workflow from JSON."
+    },
+    {
+      "name": "activate",
+      "description": "Activate a workflow."
+    },
+    {
+      "name": "trigger",
+      "description": "Trigger a workflow run with payload JSON."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "n8n command result payload",
+    "path": "n8n base URL"
+  }
+}

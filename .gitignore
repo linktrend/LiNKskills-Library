@@ -15,3 +15,7 @@ tools/gw/src/credentials.json
 tools/gw/src/__pycache__/
 tools/gw/src/*.log
 tools/gw/src/venv/
+
+# Fortress security storage
+tools/vault/data/*.bin
+**/token.json

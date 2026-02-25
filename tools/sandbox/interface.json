@@ -1,0 +1,33 @@
+{
+  "name": "sandbox",
+  "description": "Ephemeral Docker runtime wrapper for constrained shell execution with deterministic outputs.",
+  "capability_summary": "Runs commands in temporary containers with memory limits and network isolation to reduce host risk.",
+  "parameters": [
+    {
+      "name": "command",
+      "type": "string",
+      "description": "Shell command string to execute inside the container."
+    },
+    {
+      "name": "allow_network",
+      "type": "boolean",
+      "description": "Optional override to enable network access. Default is false."
+    },
+    {
+      "name": "cwd",
+      "type": "string",
+      "description": "Host directory to mount as /workspace for command execution."
+    }
+  ],
+  "commands": [
+    {
+      "name": "run",
+      "description": "Execute one command in an ephemeral container and return stdout/stderr/exit code."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "stdout/stderr and exit code payload",
+    "path": "mounted workspace path"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "name": "doc-engine",
+  "description": "Document engine for OCR, conversion, and Markdown print-to-Google-Doc workflows.",
+  "capability_summary": "Provides OCR via unstructured, conversion via pandoc, and direct Markdown publication into Google Docs.",
+  "parameters": [
+    {
+      "name": "file_path",
+      "type": "string",
+      "description": "Input file path for OCR extraction."
+    },
+    {
+      "name": "input_path",
+      "type": "string",
+      "description": "Input document path for conversion."
+    },
+    {
+      "name": "output_path",
+      "type": "string",
+      "description": "Output document path for conversion results."
+    },
+    {
+      "name": "markdown_text",
+      "type": "string",
+      "description": "Markdown content for print-to-google-doc command."
+    }
+  ],
+  "commands": [
+    {
+      "name": "ocr",
+      "description": "Extract text from documents using unstructured OCR pipeline."
+    },
+    {
+      "name": "convert",
+      "description": "Convert file formats using pandoc."
+    },
+    {
+      "name": "print-to-google-doc",
+      "description": "Create a Google Doc and append Markdown content."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "document processing result payload",
+    "path": "doc-engine"
+  }
+}

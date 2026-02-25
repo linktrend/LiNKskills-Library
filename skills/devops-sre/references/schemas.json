@@ -1,0 +1,41 @@
+{
+  "definitions": {
+    "input": {
+      "type": "object",
+      "required": ["service_name", "deploy_target"],
+      "properties": {
+        "service_name": { "type": "string", "minLength": 1 },
+        "deploy_target": { "type": "string", "minLength": 1 },
+        "requires_master_key": { "type": "boolean" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "docker_profile", "rollback_plan"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "docker_profile": { "type": "object" },
+        "rollback_plan": { "type": "string", "minLength": 1 },
+        "master_key_verified": { "type": "boolean" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["task_id", "workflow_step", "status", "variables", "last_updated"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "pattern": "^\\d{8}-\\d{4}-[A-Z0-9]+-\\d{6}$"
+        },
+        "workflow_step": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "status": {
+          "type": "string",
+          "enum": ["INITIALIZED", "IN_PROGRESS", "PENDING_APPROVAL", "COMPLETED", "FAILED"]
+        },
+        "variables": { "type": "object" },
+        "last_updated": { "type": "string" },
+        "seek_index": { "type": "object" }
+      }
+    }
+  }
+}

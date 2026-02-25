@@ -1,7 +1,7 @@
 # gw
 
 ## Capability Summary
-Unified gateway for Google Workspace. Use for Gmail (send/list), Drive (upload/share), Docs (formatting/markdown), Sheets (logging), Calendar (scheduling), and Chat.
+Unified gateway for Google Workspace and external services. Use for Gmail (send/list), Drive (upload/share), Docs (formatting/markdown), Sheets (logging), Calendar (scheduling), Chat, and News (search/trending). Includes `vault` for encrypted secret storage and `sandbox` for ephemeral containerized command execution.
 
 ## CLI
 - `--help`
@@ -10,10 +10,12 @@ Unified gateway for Google Workspace. Use for Gmail (send/list), Drive (upload/s
 
 ## Usage
 - `bin/gw gmail send --to user@example.com --subject "Hello" --body "Test message"`
-- `bin/gw gmail list --limit 20`
-- `bin/gw drive upload --path ./report.pdf --folder-id <folder_id>`
-- `bin/gw drive share --file-id <file_id> --email user@example.com --role writer`
-- `bin/gw docs append-markdown --doc-id <doc_id> --markdown "# Update"`
-- `bin/gw sheets log --sheet-id <sheet_id> --range A1 --values "status,ok"`
-- `bin/gw calendar schedule --title "Standup" --start "2026-02-23T09:00:00" --end "2026-02-23T09:30:00"`
-- `bin/gw chat send --space <space_id> --text "Build complete"`
+- `bin/gw drive upload --file-path ./report.pdf`
+- `bin/gw docs append --document-id <doc_id> --text "# Update" --markdown`
+- `bin/gw tasks list --list-id @default`
+- `bin/gw youtube stats`
+- `bin/gw news search "artificial intelligence regulation"`
+- `bin/gw news trending --limit 10`
+- `bin/gw vault set gw.credentials.json ./credentials.json`
+- `bin/gw vault get gw.credentials.json`
+- `bin/gw sandbox run "python3 -V"`

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PARENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+python3 "$PARENT_DIR/src/research_router.py" "$@"

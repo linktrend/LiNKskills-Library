@@ -1,0 +1,40 @@
+{
+  "definitions": {
+    "input": {
+      "type": "object",
+      "required": ["prd_text", "factory_path"],
+      "properties": {
+        "prd_text": { "type": "string", "minLength": 20 },
+        "factory_path": { "type": "string", "minLength": 1 },
+        "session_budget": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "route_packets", "sessions_spawn"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "route_packets": { "type": "array", "items": { "type": "object" } },
+        "sessions_spawn": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["task_id", "workflow_step", "status", "variables", "last_updated"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "pattern": "^\\d{8}-\\d{4}-[A-Z0-9]+-\\d{6}$"
+        },
+        "workflow_step": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "status": {
+          "type": "string",
+          "enum": ["INITIALIZED", "IN_PROGRESS", "PENDING_APPROVAL", "COMPLETED", "FAILED"]
+        },
+        "variables": { "type": "object" },
+        "last_updated": { "type": "string" },
+        "seek_index": { "type": "object" }
+      }
+    }
+  }
+}

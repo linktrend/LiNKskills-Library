@@ -3,8 +3,8 @@
     "uid": "gw",
     "type": "tool",
     "path": "tools/gw/src/cli.py",
-    "version": "v1.4.0",
-    "description": "Internalized v1.4.0 gateway with 16+ integrated services: Gmail, Drive, Docs, Sheets, Calendar, Analytics, YT Analytics, Search Console, Forms, Ads, Maps Routes, Env Context, Tasks, Slides, Chat, and YouTube."
+    "version": "v2.1.0",
+    "description": "Internalized v2.1.0 gateway with fortress enforcement, studio integrations, venture operations hooks, and hardened observability."
   },
   {
     "uid": "playwright-cli",
@@ -19,6 +19,111 @@
     "path": "/tools/fast-playwright",
     "version": "1.0.0",
     "description": "FastMCP Playwright server wrapper for interactive, session-based browser automation."
+  },
+  {
+    "uid": "vault",
+    "type": "tool",
+    "path": "/tools/vault",
+    "version": "1.0.0",
+    "description": "Encrypted credential vault using LSL_MASTER_KEY with audited set/get/list operations."
+  },
+  {
+    "uid": "sandbox",
+    "type": "tool",
+    "path": "/tools/sandbox",
+    "version": "1.0.0",
+    "description": "Ephemeral Docker runtime for isolated command execution with memory limits and default network isolation."
+  },
+  {
+    "uid": "usage",
+    "type": "tool",
+    "path": "/tools/usage",
+    "version": "1.1.0",
+    "description": "Langfuse-based usage telemetry tool with silent local fallback, host defaulting, and vault-managed credentials."
+  },
+  {
+    "uid": "memory",
+    "type": "tool",
+    "path": "/tools/memory",
+    "version": "1.1.0",
+    "description": "Supabase-backed memory tool with scoped recall plus Markdown notes in lsl_memory.notes."
+  },
+  {
+    "uid": "n8n",
+    "type": "tool",
+    "path": "/tools/n8n",
+    "version": "1.0.0",
+    "description": "n8n workflow API tool for read, create, activate/deactivate, and trigger operations with vault-backed API keys."
+  },
+  {
+    "uid": "stripe",
+    "type": "tool",
+    "path": "/tools/stripe",
+    "version": "1.0.0",
+    "description": "Stripe billing operations tool with vault-backed API key and invoice retrieval commands."
+  },
+  {
+    "uid": "shopify",
+    "type": "tool",
+    "path": "/tools/shopify",
+    "version": "1.0.0",
+    "description": "Shopify commerce operations tool with vault-backed access token and product listing commands."
+  },
+  {
+    "uid": "doc-engine",
+    "type": "tool",
+    "path": "/tools/doc-engine",
+    "version": "1.0.0",
+    "description": "Document engine for OCR via unstructured, conversion via pandoc, and Markdown print-to-Google-Doc."
+  },
+  {
+    "uid": "research",
+    "type": "tool",
+    "path": "/tools/research",
+    "version": "1.0.0",
+    "description": "Multi-tier research gateway with cost-aware routing across web, neural, brief, and social tiers."
+  },
+  {
+    "uid": "text-echo",
+    "type": "tool",
+    "path": "/tools/text-echo",
+    "version": "1.0.0",
+    "description": "Deterministic echo utility for smoke-testing parser and wrapper pipelines."
+  },
+  {
+    "uid": "sync-scheduler",
+    "type": "tool",
+    "path": "/tools/sync-scheduler",
+    "version": "1.0.0",
+    "description": "Calendar scheduling helper that uses gw to suggest Project Review time slots in deterministic JSON."
+  },
+  {
+    "uid": "ad-intel",
+    "type": "tool",
+    "path": "/tools/ad-intel",
+    "version": "1.0.0",
+    "description": "Ad performance monitor for Spend vs CTR anomaly detection using gw bridge inputs and deterministic JSON alerts."
+  },
+  {
+    "uid": "n8n-bridge",
+    "type": "tool",
+    "path": "/tools/n8n-bridge",
+    "version": "1.0.0",
+    "description": "Secure webhook trigger bridge for local n8n workflows using gw commands and Vault-backed token retrieval."
+  },
+  {
+    "uid": "asset-filer",
+    "type": "tool",
+    "path": "/tools/asset-filer",
+    "version": "1.0.0",
+    "description": "Uploads assets through gw and registers metadata records for retrieval in lsl_memory.assets."
+  },
+  {
+    "uid": "social-gw",
+    "type": "tool",
+    "path": "/tools/social-gw",
+    "version": "1.0.0",
+    "description": "Unified social wrapper for posting and comment retrieval across YouTube, TikTok, and X via gw."
   },
   {
     "uid": "skill-template",
@@ -40,5 +145,222 @@
     "path": "/skills/tool-architect",
     "version": "1.0.0",
     "description": "Designs, wraps, and validates CLI-first tools for the LiNKskills Global Tools Registry."
+  },
+  {
+    "uid": "workflow-architect",
+    "type": "skill",
+    "path": "/skills/workflow-architect",
+    "version": "1.0.0",
+    "description": "Designs n8n workflows as JSON, creates them via API, then activates and tests them autonomously."
+  },
+  {
+    "uid": "repository-manager",
+    "type": "skill",
+    "path": "/skills/repository-manager",
+    "version": "1.0.0",
+    "description": "Enforces progress-sync handoffs, branch discipline, and staged file commit safeguards."
+  },
+  {
+    "uid": "audit-protocol",
+    "type": "skill",
+    "path": "/skills/audit-protocol",
+    "version": "1.0.0",
+    "description": "Enforces predictive intent logging to GWAuditLogger before write actions across GW and n8n."
+  },
+  {
+    "uid": "git-safeguard",
+    "type": "skill",
+    "path": "/skills/git-safeguard",
+    "version": "1.0.0",
+    "description": "Requires mandatory safety checklist review (`git status`, `git diff --cached`) before any push."
+  },
+  {
+    "uid": "task-decomposition",
+    "type": "skill",
+    "path": "/skills/task-decomposition",
+    "version": "1.0.0",
+    "description": "Applies Factored Cognition to break complex studio work into atomic verifiable plans."
+  },
+  {
+    "uid": "citation-enforcer",
+    "type": "skill",
+    "path": "/skills/citation-enforcer",
+    "version": "1.0.0",
+    "description": "Enforces evidence-first outputs by requiring Memory/Search/File citation for every claim."
+  },
+  {
+    "uid": "self-critique-loop",
+    "type": "skill",
+    "path": "/skills/self-critique-loop",
+    "version": "1.0.0",
+    "description": "Runs System 2 self-audit loops to detect and correct errors before finalization."
+  },
+  {
+    "uid": "self-improvement",
+    "type": "skill",
+    "path": "/skills/self-improvement",
+    "version": "1.0.0",
+    "description": "Analyzes execution_ledger trends to propose versioned upgrades for library tools and skills."
+  },
+  {
+    "uid": "search-strategy",
+    "type": "skill",
+    "path": "/skills/search-strategy",
+    "version": "1.0.0",
+    "description": "Defines research intent, confidence-based tier escalation, and HITL controls for deep research sessions."
+  },
+  {
+    "uid": "lead-engineer",
+    "type": "skill",
+    "path": "/skills/lead-engineer",
+    "version": "1.0.0",
+    "description": "Refactored senior execution model for PRD decomposition, factory.json routing, and sub-agent sessions_spawn coordination."
+  },
+  {
+    "uid": "studio-architect",
+    "type": "skill",
+    "path": "/skills/studio-architect",
+    "version": "1.0.0",
+    "description": "Template-first architecture skill that enforces factory.json discovery and baseline initialization before custom development."
+  },
+  {
+    "uid": "ui-ux-guardian",
+    "type": "skill",
+    "path": "/skills/ui-ux-guardian",
+    "version": "1.0.0",
+    "description": "Design system enforcement skill using Playwright-driven visual regression audits and policy-based gating."
+  },
+  {
+    "uid": "persistent-qa",
+    "type": "skill",
+    "path": "/skills/persistent-qa",
+    "version": "1.0.0",
+    "description": "Independent QA skill with recurrence tracking through Supabase-backed BUG_HISTORY memory."
+  },
+  {
+    "uid": "devops-sre",
+    "type": "skill",
+    "path": "/skills/devops-sre",
+    "version": "1.0.0",
+    "description": "DevOps/SRE skill for Dockerization, VPS deployment hardening, and LSL_MASTER_KEY security enforcement."
+  },
+  {
+    "uid": "prd-architect",
+    "type": "skill",
+    "path": "/skills/prd-architect",
+    "version": "1.0.0",
+    "description": "Transforms a vibe or idea into a professional technical specification with architecture, constraints, and acceptance criteria."
+  },
+  {
+    "uid": "market-analyst",
+    "type": "skill",
+    "path": "/skills/market-analyst",
+    "version": "1.0.0",
+    "description": "Runs competitor teardown and SWOT analysis using tiered research workflows and confidence-based escalation."
+  },
+  {
+    "uid": "department-head",
+    "type": "skill",
+    "path": "/skills/department-head",
+    "version": "1.0.0",
+    "description": "COO coordination skill for managing Lead Engineer and QA execution via PROGRESS.md-driven governance."
+  },
+  {
+    "uid": "software-pm",
+    "type": "skill",
+    "path": "/skills/software-pm",
+    "version": "1.0.0",
+    "description": "Software PM skill that decomposes PRDs into factory-aligned technical backlogs with QA-gated Definition of Done."
+  },
+  {
+    "uid": "blocker-resolution",
+    "type": "skill",
+    "path": "/skills/blocker-resolution",
+    "version": "1.0.0",
+    "description": "Escalation skill that triggers Root Cause Analysis when worker PROGRESS.md remains Blocked beyond two turns."
+  },
+  {
+    "uid": "studio-health-reporting",
+    "type": "skill",
+    "path": "/skills/studio-health-reporting",
+    "version": "1.0.0",
+    "description": "Aggregates lsl_memory.audit_logs and PROGRESS.md streams into Venture Studio Health Reports for COO oversight."
+  },
+  {
+    "uid": "marketing-strategist",
+    "type": "skill",
+    "path": "/skills/marketing-strategist",
+    "version": "1.0.0",
+    "description": "Senior VP of Growth skill that decomposes product PRDs into multi-channel strategy with mandatory MARKETING_STRATEGY.md output."
+  },
+  {
+    "uid": "seo-semantic-auditor",
+    "type": "skill",
+    "path": "/skills/seo-semantic-auditor",
+    "version": "1.0.0",
+    "description": "Reverse-engineers competitor keyword strategy via Brave/Exa research and outputs prioritized content gaps."
+  },
+  {
+    "uid": "revenue-adapter-base",
+    "type": "skill",
+    "path": "/skills/revenue-adapter-base",
+    "version": "1.0.0",
+    "description": "Normalizes YouTube, AdSense, and Stripe revenue inputs into canonical Venture Studio Transaction records."
+  },
+  {
+    "uid": "creative-director",
+    "type": "skill",
+    "path": "/skills/creative-director",
+    "version": "1.0.0",
+    "description": "Senior Creative Lead skill that decomposes marketing briefs into asset orders and orchestrates n8n rendering triggers."
+  },
+  {
+    "uid": "creative-qa",
+    "type": "skill",
+    "path": "/skills/creative-qa",
+    "version": "1.0.0",
+    "description": "High-fidelity creative QA gate that audits assets against brand guidelines and PRD with mandatory PASS/FAIL plus revision logic."
+  },
+  {
+    "uid": "channel-ops",
+    "type": "skill",
+    "path": "/skills/channel-ops",
+    "version": "1.0.0",
+    "description": "Platform operations skill for YouTube, TikTok, and X scheduling, comment management, and support-to-sales funnel execution."
+  },
+  {
+    "uid": "compliance-guardian",
+    "type": "skill",
+    "path": "/skills/compliance-guardian",
+    "version": "1.0.0",
+    "description": "Platform legal and safety specialist for YouTube/Meta terms monitoring, AI disclosures, and publication compliance gating."
+  },
+  {
+    "uid": "engagement-to-strategy-loop",
+    "type": "skill",
+    "path": "/skills/engagement-to-strategy-loop",
+    "version": "1.0.0",
+    "description": "Analyzes views, CTR, and sentiment to deliver high-signal strategic feedback loops back to marketing."
+  },
+  {
+    "uid": "studio-controller",
+    "type": "skill",
+    "path": "/skills/studio-controller",
+    "version": "1.0.0",
+    "description": "Financial oversight skill delivering GAAP reporting, reconciliation, and Supabase lsl_finance transaction logging."
+  },
+  {
+    "uid": "smart-file-clerk",
+    "type": "skill",
+    "path": "/skills/smart-file-clerk",
+    "version": "1.0.0",
+    "description": "Senior document manager skill for hybrid Supabase/GDrive storage and OCR indexing of financial/legal documents."
+  },
+  {
+    "uid": "executive-sync-8am",
+    "type": "skill",
+    "path": "/skills/executive-sync-8am",
+    "version": "1.0.0",
+    "description": "Exec sync skill that starts 06:00 Taipei data collection and produces the 08:00 AM Wins/Blockers/Financial Health briefing."
   }
 ]

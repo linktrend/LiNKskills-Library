@@ -1,0 +1,38 @@
+{
+  "name": "research",
+  "description": "Cost-aware multi-tier research router supporting web, neural, brief, and social query strategies.",
+  "capability_summary": "Runs low-cost web search by default and escalates to specialized tiers when confidence requires deeper retrieval.",
+  "parameters": [
+    {
+      "name": "query",
+      "type": "string",
+      "description": "Research query text."
+    },
+    {
+      "name": "tier",
+      "type": "string",
+      "description": "Tier selector: auto, web, neural, brief, social."
+    },
+    {
+      "name": "limit",
+      "type": "integer",
+      "description": "Maximum number of results for retrieval tiers."
+    },
+    {
+      "name": "min_confidence",
+      "type": "number",
+      "description": "Escalation threshold for auto mode (0.0 to 1.0)."
+    }
+  ],
+  "commands": [
+    {
+      "name": "search",
+      "description": "Run multi-tier search with optional auto escalation."
+    }
+  ],
+  "output_contract": {
+    "status": "success|error",
+    "output": "research routing result payload",
+    "path": "research"
+  }
+}

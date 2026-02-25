@@ -1,22 +1,22 @@
 {
   "name": "gw",
-  "description": "Unified Google Workspace CLI gateway for Gmail, Drive, Docs, Sheets, Calendar, and Chat operations.",
-  "capability_summary": "Unified gateway for Google Workspace. Use for Gmail (send/list), Drive (upload/share), Docs (formatting/markdown), Sheets (logging), Calendar (scheduling), and Chat.",
+  "description": "Unified Google Workspace and operations gateway with audited JSON outputs, including secure vault, container sandbox controls, and Apify-backed news retrieval.",
+  "capability_summary": "Unified gateway for Google Workspace and external services. Use for Gmail (send/list), Drive (upload/share), Docs (formatting/markdown), Sheets (logging), Calendar (scheduling), Chat, News (search/trending), plus vault secrets and sandboxed execution.",
   "parameters": [
     {
       "name": "service",
       "type": "string",
-      "description": "Top-level service selector: gmail, drive, docs, sheets, calendar, chat."
+      "description": "Top-level selector (gmail, drive, docs, sheets, calendar, chat, tasks, youtube, analytics, forms, ads, news, maps, env, vault, sandbox)."
     },
     {
       "name": "command",
       "type": "string",
-      "description": "Service command to execute (examples: send, list, upload, share, append-markdown, log, schedule)."
+      "description": "Service command to execute (examples: send, list, upload, share, set, get, run)."
     },
     {
       "name": "args",
       "type": "string",
-      "description": "Additional CLI flags/values passed through to gw (supports --json for structured output)."
+      "description": "Additional CLI flags/values passed through to gw commands."
     }
   ],
   "subcommands": [
@@ -26,35 +26,51 @@
     },
     {
       "name": "gmail list",
-      "description": "List Gmail messages with optional query and pagination controls."
+      "description": "List Gmail messages with optional filters and pagination controls."
     },
     {
       "name": "drive upload",
-      "description": "Upload a local file to Google Drive with optional target folder selection."
+      "description": "Upload a local file to Google Drive with optional folder selection."
     },
     {
       "name": "drive share",
-      "description": "Grant Drive file permissions to user/group/domain with role controls."
+      "description": "Grant Drive file permissions with strict role controls."
     },
     {
-      "name": "docs append-markdown",
-      "description": "Append markdown-formatted content to an existing Google Doc."
+      "name": "docs append",
+      "description": "Append plain text or markdown content to an existing Google Doc."
     },
     {
-      "name": "docs format",
-      "description": "Apply document formatting operations to ranges or structural elements."
+      "name": "sheets append",
+      "description": "Write values into a spreadsheet range for logging and tracking."
     },
     {
-      "name": "sheets log",
-      "description": "Write log/event values into a spreadsheet range for operational tracking."
-    },
-    {
-      "name": "calendar schedule",
-      "description": "Create or update calendar events with start/end times and attendees."
+      "name": "calendar create",
+      "description": "Create calendar events with start/end times and attendee support."
     },
     {
       "name": "chat send",
       "description": "Send messages to Google Chat spaces for notifications and updates."
+    },
+    {
+      "name": "news search",
+      "description": "Search real-time news via Apify actor integration using vault-managed API token."
+    },
+    {
+      "name": "news trending",
+      "description": "Fetch trending headline bundles via Apify actor integration."
+    },
+    {
+      "name": "vault set",
+      "description": "Encrypt and store secret values using the LSL master key."
+    },
+    {
+      "name": "vault get",
+      "description": "Decrypt and return a secret value by key."
+    },
+    {
+      "name": "sandbox run",
+      "description": "Execute a shell command in an ephemeral Docker container with restricted resources."
     }
   ],
   "flags": [
@@ -64,11 +80,11 @@
     },
     {
       "name": "--version",
-      "description": "Show gateway CLI version."
+      "description": "Show gateway CLI version and active service inventory."
     },
     {
       "name": "--json",
-      "description": "Emit structured JSON output for machine/agent consumption."
+      "description": "Emit structured JSON output for machine/agent consumption (default output mode)."
     }
   ]
 }

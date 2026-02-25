@@ -1,0 +1,44 @@
+{
+  "definitions": {
+    "input": {
+      "type": "object",
+      "required": ["market", "competitors", "objective"],
+      "properties": {
+        "market": { "type": "string", "minLength": 3 },
+        "competitors": { "type": "array", "items": { "type": "string" } },
+        "objective": { "type": "string", "minLength": 5 },
+        "deep_research": { "type": "boolean" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "teardown", "swot"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "teardown": { "type": "array", "items": { "type": "object" } },
+        "swot": {
+          "type": "object",
+          "required": ["strengths", "weaknesses", "opportunities", "threats"],
+          "properties": {
+            "strengths": { "type": "array", "items": { "type": "string" } },
+            "weaknesses": { "type": "array", "items": { "type": "string" } },
+            "opportunities": { "type": "array", "items": { "type": "string" } },
+            "threats": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["task_id", "workflow_step", "status", "variables", "last_updated"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^\\d{8}-\\d{4}-[A-Z0-9]+-\\d{6}$" },
+        "workflow_step": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "status": { "type": "string", "enum": ["INITIALIZED", "IN_PROGRESS", "PENDING_APPROVAL", "COMPLETED", "FAILED"] },
+        "variables": { "type": "object" },
+        "last_updated": { "type": "string" },
+        "seek_index": { "type": "object" }
+      }
+    }
+  }
+}

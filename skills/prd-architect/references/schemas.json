@@ -1,0 +1,36 @@
+{
+  "definitions": {
+    "input": {
+      "type": "object",
+      "required": ["idea", "business_goal", "target_user"],
+      "properties": {
+        "idea": { "type": "string", "minLength": 8 },
+        "business_goal": { "type": "string", "minLength": 5 },
+        "target_user": { "type": "string", "minLength": 3 },
+        "constraints": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "spec_title", "sections"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "spec_title": { "type": "string", "minLength": 3 },
+        "sections": { "type": "array", "items": { "type": "string" } },
+        "open_questions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["task_id", "workflow_step", "status", "variables", "last_updated"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^\\d{8}-\\d{4}-[A-Z0-9]+-\\d{6}$" },
+        "workflow_step": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "status": { "type": "string", "enum": ["INITIALIZED", "IN_PROGRESS", "PENDING_APPROVAL", "COMPLETED", "FAILED"] },
+        "variables": { "type": "object" },
+        "last_updated": { "type": "string" },
+        "seek_index": { "type": "object" }
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "definitions": {
+    "input": {
+      "type": "object",
+      "required": ["sources"],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["youtube_views", "adsense", "stripe"]
+          }
+        },
+        "payload_path": { "type": "string", "minLength": 1 },
+        "currency_default": { "type": "string", "minLength": 3 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "transactions"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "transactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["transaction_id", "source", "amount", "currency", "timestamp"],
+            "properties": {
+              "transaction_id": { "type": "string" },
+              "source": { "type": "string" },
+              "amount": { "type": "integer" },
+              "currency": { "type": "string" },
+              "timestamp": { "type": "string" },
+              "reference": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["task_id", "workflow_step", "status", "variables", "last_updated"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^\\d{8}-\\d{4}-[A-Z0-9]+-\\d{6}$" },
+        "workflow_step": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "status": { "type": "string", "enum": ["INITIALIZED", "IN_PROGRESS", "PENDING_APPROVAL", "COMPLETED", "FAILED"] },
+        "variables": { "type": "object" },
+        "last_updated": { "type": "string" },
+        "seek_index": { "type": "object" }
+      }
+    }
+  }
+}

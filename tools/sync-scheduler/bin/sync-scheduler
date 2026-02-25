@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+import argparse
+import datetime as dt
+import json
+import shutil
+import subprocess
+import sys
+from typing import Any, Dict, List, Tuple
+
+VERSION = "1.0.0"
+
+
+def out(payload: Dict[str, Any], code: int = 0) -> int:
+    print(json.dumps(payload, indent=2))
+    return code
+
+
+def parse_iso(ts: str) -> dt.datetime:
+    if ts.endswith("Z"):
+        ts = ts[:-1] + "+00:00"
+    return dt.datetime.fromisoformat(ts)
+
+
+def build_candidate_slots(day: dt.date, start_hour: int, end_hour: int, duration_min: int) -> List[Tuple[dt.datetime, dt.datetime]]:
+    slots: List[Tuple[dt.datetime, dt.datetime]] = []
+    cursor = dt.datetime.combine(day, dt.time(start_hour, 0))
+    end_of_day = dt.datetime.combine(day, dt.time(end_hour, 0))
+    step = dt.timedelta(minutes=30)
+    duration = dt.timedelta(minutes=duration_min)
+    while cursor + duration <= end_of_day:
+        slots.append((cursor, cursor + duration))
+        cursor += step
+    return slots
+
+
+def overlaps(a_start: dt.datetime, a_end: dt.datetime, b_start: dt.datetime, b_end: dt.datetime) -> bool:
+    return a_start < b_end and b_start < a_end
+
+
+def call_gw_events(date_str: str) -> Dict[str, Any]:
+    gw_path = shutil.which("gw")
+    if gw_path is None:
+        return {"status": "error", "message": "gw executable not found in PATH", "events": []}
+
+    cmd = [
+        gw_path,
+        "calendar",
+        "list",
+        "--date",
+        date_str,
+        "--json"
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except Exception as exc:
+        return {"status": "error", "message": f"gw invocation failed: {exc}", "events": []}
+
+    if result.returncode != 0:
+        return {
+            "status": "error",
+            "message": "gw calendar query failed",
+            "stderr": result.stderr.strip(),
+            "events": []
+        }
+
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {
+            "status": "error",
+            "message": "gw returned non-JSON output",
+            "events": []
+        }
+
+    events = payload.get("events")
+    if not isinstance(events, list):
+        events = payload.get("items", []) if isinstance(payload.get("items"), list) else []
+
+    return {"status": "success", "events": events}
+
+
+def extract_intervals(events: List[Dict[str, Any]]) -> List[Tuple[dt.datetime, dt.datetime]]:
+    intervals: List[Tuple[dt.datetime, dt.datetime]] = []
+    for event in events:
+        start_obj = event.get("start", {}) if isinstance(event, dict) else {}
+        end_obj = event.get("end", {}) if isinstance(event, dict) else {}
+        start_raw = start_obj.get("dateTime") or start_obj.get("date")
+        end_raw = end_obj.get("dateTime") or end_obj.get("date")
+        if not (isinstance(start_raw, str) and isinstance(end_raw, str)):
+            continue
+        try:
+            start_dt = parse_iso(start_raw) if "T" in start_raw else dt.datetime.fromisoformat(start_raw + "T00:00:00")
+            end_dt = parse_iso(end_raw) if "T" in end_raw else dt.datetime.fromisoformat(end_raw + "T00:00:00")
+        except Exception:
+            continue
+        intervals.append((start_dt, end_dt))
+    return intervals
+
+
+def suggest(date_str: str, duration_minutes: int, count: int, start_hour: int, end_hour: int) -> Dict[str, Any]:
+    day = dt.datetime.strptime(date_str, "%Y-%m-%d").date()
+    gw_result = call_gw_events(date_str)
+    if gw_result.get("status") != "success":
+        return {
+            "status": "error",
+            "output": "Unable to fetch calendar events via gw",
+            "suggestions": [],
+            "details": gw_result
+        }
+
+    intervals = extract_intervals(gw_result.get("events", []))
+    candidates = build_candidate_slots(day, start_hour, end_hour, duration_minutes)
+
+    suggestions: List[Dict[str, str]] = []
+    for start, end in candidates:
+        busy = False
+        for busy_start, busy_end in intervals:
+            if overlaps(start, end, busy_start, busy_end):
+                busy = True
+                break
+        if not busy:
+            suggestions.append(
+                {
+                    "title": "Project Review",
+                    "start": start.isoformat(),
+                    "end": end.isoformat()
+                }
+            )
+        if len(suggestions) >= count:
+            break
+
+    return {
+        "status": "success",
+        "output": "Project Review slots generated",
+        "suggestions": suggestions,
+        "source": "gw calendar list"
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Suggest project review slots using gw calendar data.")
+    parser.add_argument("command", nargs="?", default="suggest", choices=["suggest"], help="Command to execute")
+    parser.add_argument("--date", required=False, help="Date in YYYY-MM-DD; defaults to today")
+    parser.add_argument("--duration-minutes", type=int, default=45, help="Meeting duration in minutes")
+    parser.add_argument("--count", type=int, default=3, help="Number of slots to suggest")
+    parser.add_argument("--start-hour", type=int, default=9, help="Start hour (0-23)")
+    parser.add_argument("--end-hour", type=int, default=18, help="End hour (1-24)")
+    parser.add_argument("--json", action="store_true", help="Emit JSON output (default behavior)")
+    parser.add_argument("--version", action="store_true", help="Show tool version")
+
+    args = parser.parse_args()
+
+    if args.version:
+        return out({"status": "success", "output": VERSION}, 0)
+
+    target_date = args.date or dt.date.today().isoformat()
+
+    try:
+        payload = suggest(
+            date_str=target_date,
+            duration_minutes=args.duration_minutes,
+            count=args.count,
+            start_hour=args.start_hour,
+            end_hour=args.end_hour,
+        )
+    except Exception as exc:
+        return out({"status": "error", "output": "unexpected failure", "error": str(exc), "suggestions": []}, 1)
+
+    return out(payload, 0 if payload.get("status") == "success" else 1)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

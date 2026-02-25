@@ -1,0 +1,43 @@
+{
+  "definitions": {
+    "input": {
+      "type": "object",
+      "required": ["project_goal", "factory_path"],
+      "properties": {
+        "project_goal": { "type": "string", "minLength": 10 },
+        "factory_path": { "type": "string", "minLength": 1 },
+        "preferred_template": {
+          "type": "string",
+          "enum": ["saas-starter-kit", "website-template", "auto"]
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "selected_template", "delta_plan"],
+      "properties": {
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "selected_template": { "type": "string" },
+        "delta_plan": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["task_id", "workflow_step", "status", "variables", "last_updated"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "pattern": "^\\d{8}-\\d{4}-[A-Z0-9]+-\\d{6}$"
+        },
+        "workflow_step": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "status": {
+          "type": "string",
+          "enum": ["INITIALIZED", "IN_PROGRESS", "PENDING_APPROVAL", "COMPLETED", "FAILED"]
+        },
+        "variables": { "type": "object" },
+        "last_updated": { "type": "string" },
+        "seek_index": { "type": "object" }
+      }
+    }
+  }
+}
