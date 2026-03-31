@@ -45,6 +45,16 @@ Production secret contract:
 - `LOGIC_ENGINE_ENV=production` requires GSM file reads (`LOGIC_ENGINE_GSM_SECRET_FILE`) for execution paths.
 - GSM read failure is fail-closed for writes and enables controlled safe mode.
 
+## Supabase Schema Standard
+- Shared internal Supabase project schema for LiNKskills: `lskills_core`.
+- Database sessions should use `search_path=lskills_core,public`.
+- Migration naming standard for new migrations: `YYYYMMDD_HHMMSS_lskills_<change>.sql`.
+- Apply SQL migrations in order:
+```bash
+psql "$DATABASE_URL" -f sql/001_schema.sql
+psql "$DATABASE_URL" -f sql/002_rls.sql
+```
+
 ## Run Retention Sweep
 ```bash
 python scripts/run_retention_worker.py

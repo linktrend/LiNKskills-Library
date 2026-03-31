@@ -1,5 +1,8 @@
 -- LiNKskills Logic Engine PRD v4.0 (MVO Class A) schema
 
+create schema if not exists lskills_core;
+set search_path = lskills_core, public;
+
 create table if not exists tenants (
   tenant_id text primary key,
   slug text,
@@ -258,6 +261,23 @@ create table if not exists alerts (
 
 create index if not exists idx_principals_tenant on principals(tenant_id);
 create index if not exists idx_capabilities_class on capabilities(capability_class, certification_state, activation_state);
+
+comment on schema lskills_core is 'LiNKskills core runtime schema';
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'svc_linkskills_runtime') then
+    execute 'grant usage on schema lskills_core to svc_linkskills_runtime';
+    execute 'grant select, insert, update, delete on all tables in schema lskills_core to svc_linkskills_runtime';
+    execute 'alter default privileges in schema lskills_core grant select, insert, update, delete on tables to svc_linkskills_runtime';
+  end if;
+
+  if exists (select 1 from pg_roles where rolname = 'svc_observer') then
+    execute 'grant usage on schema lskills_core to svc_observer';
+    execute 'grant select on all tables in schema lskills_core to svc_observer';
+    execute 'alter default privileges in schema lskills_core grant select on tables to svc_observer';
+  end if;
+end $$;
 create index if not exists idx_runs_tenant on runs(tenant_id);
 create index if not exists idx_runs_principal on runs(principal_id);
 create index if not exists idx_runs_status on runs(status);

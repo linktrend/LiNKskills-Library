@@ -1,5 +1,7 @@
 -- LiNKskills Logic Engine PRD v4.0 RLS policies
 
+set search_path = lskills_core, public;
+
 alter table tenants enable row level security;
 alter table principals enable row level security;
 alter table api_keys enable row level security;
