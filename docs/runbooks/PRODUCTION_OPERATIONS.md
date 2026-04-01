@@ -1,5 +1,8 @@
 # LiNKskills Production Operations Runbook
 
+Owner: LiNKtrend Platform  
+Last updated: 2026-04-01
+
 ## Production requirements
 - GSM-only secret resolution (`LOGIC_ENGINE_SECRET_PROVIDER=gsm`).
 - `LOGIC_ENGINE_ENV=production` with fail-closed behavior on secret failure.

@@ -43,3 +43,8 @@ LiNKskills is the Venture Studio's governed skill-and-tool operating layer and n
 
 ## Security Prerequisite
 - `export LSL_MASTER_KEY="<your-master-key>"`
+
+## Documentation Map
+- [Docs Index](./docs/README.md)
+- [Branching and Deployment Policy](./docs/BRANCHING_AND_DEPLOYMENT_POLICY.md)
+- [Documentation Governance](./docs/DOCUMENTATION_GOVERNANCE.md)
